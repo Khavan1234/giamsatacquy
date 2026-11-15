@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a1626">
+<title>Giám Sát Ắc Quy</title>
+<style>
+  :root{--bg:#0a1626;--panel:#13243b;--text:#eef3fa;--muted:#8fa3bd;--line:#223653;--ok:#35e0a1;--bad:#ff6b5e}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);
+    background:radial-gradient(900px 500px at 50% -120px,#1c3b66 0%,var(--bg) 62%) fixed,var(--bg);
+    display:flex;justify-content:center;padding:22px 14px 32px}
+  main{width:100%;max-width:480px}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:.2px}
+  .sub{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);margin:0 0 16px}
+  .sub::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+  .sub.live::before{background:var(--ok);box-shadow:0 0 0 4px rgba(53,224,161,.18)}
+  .sub.bad{color:var(--bad);font-weight:600}
+  .sub.bad::before{background:var(--bad);box-shadow:0 0 0 4px rgba(255,107,94,.2)}
+
+  .hero{border-radius:22px;padding:20px 22px;margin-bottom:12px;color:#06210f;
+    background:linear-gradient(135deg,#6ef0b0 0%,#2fc47a 100%);box-shadow:0 10px 30px rgba(47,196,122,.25)}
+  .hero.warn{color:#2a0a05;background:linear-gradient(135deg,#ff9a8a 0%,#ff5a47 100%);box-shadow:0 10px 30px rgba(255,90,71,.3)}
+  .hero.off{color:#1d2430;background:linear-gradient(135deg,#c9d3e0 0%,#8fa3bd 100%);box-shadow:none}
+  .hero .k{font-size:15px;font-weight:600;opacity:.8;margin-bottom:6px}
+  .big{font-size:68px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .unit{font-size:26px;font-weight:700;opacity:.7}
+  .state{font-size:18px;font-weight:800;margin-top:10px}
+  .thr{font-size:13px;opacity:.8;margin-top:2px}
+  .alert{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgba(255,107,94,.15);border:1px solid rgba(255,107,94,.5);color:#ffb3aa;font-size:14px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{--c:#7aa7ff;border-radius:14px;padding:14px 14px 14px 16px;border:1px solid var(--line);
+    border-left:5px solid var(--c);background:var(--panel);
+    background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+  .k{font-size:13px;color:var(--muted);margin-bottom:4px}
+  .card .k{color:color-mix(in srgb,var(--c) 55%,#fff)}
+  .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+  .n small{font-size:15px;font-weight:500;color:var(--muted)}
+  .n.t{font-size:20px}
+  .wide{grid-column:1/-1}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
+
+  .chart{--c:#2fd6ee;margin-bottom:12px}
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .chead b{font-size:16px;color:#bff3fb}
+  .rng{display:flex;gap:6px}
+  .rng button{width:auto;margin:0;font-size:13px;padding:5px 10px;border-radius:8px;font-weight:600;
+    background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .rng button.on{background:#2fd6ee;color:#04222a;border-color:#2fd6ee}
+  .cwrap{position:relative;height:200px;margin-top:10px}
+  #cv{width:100%;height:100%;display:block;touch-action:pan-y}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0d1c30;color:var(--text);margin-bottom:12px}
+  button{width:100%;font-size:17px;padding:13px;border:0;border-radius:10px;
+    background:linear-gradient(135deg,#35e0a1,#1fb6d4);color:#04231a;font-weight:700;cursor:pointer}
+  button.secondary{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;font-size:14px;padding:9px;margin-top:16px}
+  button:focus-visible,input:focus-visible{outline:3px solid #ffd23f;outline-offset:2px}
+  #err{color:var(--bad);font-size:14px;min-height:20px;margin:8px 0 0}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Giám Sát Ắc Quy</h1>
+
+  <section id="login" class="panel">
+    <label for="em">Email</label>
+    <input id="em" type="email" autocomplete="username">
+    <label for="pw">Mật khẩu</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <button id="btnLogin">Đăng nhập</button>
+    <p id="err" role="alert"></p>
+  </section>
+
+  <section id="app" class="hidden">
+    <p id="age" class="sub">Đang chờ dữ liệu…</p>
+    <div class="hero off" id="hero">
+      <div class="k">Điện áp ắc quy</div>
+      <div class="big"><span id="vbat">--</span> <span class="unit">V</span></div>
+      <div class="state" id="state">Đang chờ dữ liệu…</div>
+      <div class="thr" id="thr"></div>
+    </div>
+    <div class="alert hidden" id="alert"></div>
+    <div class="grid">
+      <div class="card wide" style="--c:#ffb347"><div class="k">Nhiệt độ</div><div class="n"><span id="temp">--</span></div><div class="hint" id="tempHint"></div></div>
+    </div>
+    <button id="btnLogout" class="secondary">Đăng xuất</button>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+  import { getDatabase, ref, onValue }
+    from "https://www.gstatic.com/firebasejs/13.3.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0VeMyDttFC-jJSUeI7nACFrCmnGNZkC8",
+    authDomain: "giamsatacquy-53e8e.firebaseapp.com",
+    databaseURL: "https://giamsatacquy-53e8e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "giamsatacquy-53e8e",
+    storageBucket: "giamsatacquy-53e8e.firebasestorage.app",
+    messagingSenderId: "538927531754",
+    appId: "1:538927531754:web:bfcf34e3efd13d3a033993"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const $ = id => document.getElementById(id);
+  let unsub = null, lastTs = 0, lastRecv = 0, timer = null, cutoff = null, reconn = null;
+
+  const num = x => (x === null || x === undefined || isNaN(Number(x))) ? null : Number(x);
+  const fmt = (x, d) => num(x) === null ? "--" : Number(x).toFixed(d);
+
+  function showAge() {
+    const el = $("age");
+    if (!lastRecv) { el.textContent = "Đang chờ dữ liệu…"; el.className = "sub"; return; }
+    const age = lastTs ? Math.max(0, Math.round(Date.now() / 1000 - lastTs))
+                       : Math.round((Date.now() - lastRecv) / 1000);
+    if (age > 90) { el.textContent = "Thiết bị mất kết nối, số cuối cách đây " + Math.round(age / 60) + " phút"; el.className = "sub bad"; }
+    else { el.textContent = "Cập nhật " + age + " giây trước"; el.className = "sub live"; }
+  }
+  const dur = s => { s = Math.floor(Number(s) || 0); const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+    return d > 0 ? d + " ngày " + h + " giờ" : h > 0 ? h + " giờ " + m + " phút" : m + " phút"; };
+
+  function show(d) {
+    lastTs = d.ts || 0; lastRecv = Date.now();
+    cutoff = num(d.cutoff); reconn = num(d.reconnect);
+    $("vbat").textContent = fmt(d.vbat, 2);
+    // trạng thái tải
+    const hero = $("hero"), st = $("state");
+    if (d.cut == 1) {
+      hero.className = "hero warn";
+      st.textContent = (d.lcut == 1 && d.tcut == 1) ? "ĐÃ NGẮT TẢI: điện áp thấp + quá nhiệt"
+                     : d.tcut == 1 ? "ĐÃ NGẮT TẢI: quá nhiệt" : "ĐÃ NGẮT TẢI: điện áp ắc quy thấp";
+    } else { hero.className = "hero"; st.textContent = "Đang cấp điện bình thường"; }
+    $("thr").textContent = (cutoff !== null && reconn !== null) ? "Ngắt khi dưới " + cutoff.toFixed(2) + " V · đóng lại khi đạt " + reconn.toFixed(2) + " V" : "";
+    // cảnh báo đo
+    const al = $("alert");
+    if (d.adc == 1) { al.textContent = "Cảnh báo: điện áp đo ngoài thang của mạch đo, kiểm tra mạch chia áp."; al.classList.remove("hidden"); }
+    else if (d.adc == 2) { al.textContent = "Cảnh báo: điện áp đo gần 0 V, có thể đứt dây đo hoặc mất ắc quy."; al.classList.remove("hidden"); }
+    else al.classList.add("hidden");
+    // nhiệt độ
+    const tmax = num(d.tmax);
+    if (num(d.temp) !== null) { $("temp").textContent = Number(d.temp).toFixed(1) + " °C"; $("tempHint").textContent = tmax !== null ? "Ngắt tải khi trên " + tmax.toFixed(0) + " °C" : ""; }
+    else {
+      const m = { 1: "Không có cảm biến", 2: "Đang chờ số đo", 4: "Mất cảm biến" };
+      $("temp").textContent = "--"; $("tempHint").textContent = m[d.tst] || "Chưa dùng đo nhiệt độ";
+    }
+    showAge();
+  }
+
+  $("btnLogin").addEventListener("click", async () => {
+    $("err").textContent = "";
+    try { await signInWithEmailAndPassword(auth, $("em").value.trim(), $("pw").value); }
+    catch (e) { $("err").textContent = "Sai email hoặc mật khẩu, hoặc tên miền này chưa được thêm vào Authorized domains."; }
+  });
+  $("pw").addEventListener("keydown", e => { if (e.key === "Enter") $("btnLogin").click(); });
+  $("btnLogout").addEventListener("click", () => signOut(auth));
+
+  onAuthStateChanged(auth, user => {
+    $("login").classList.toggle("hidden", !!user);
+    $("app").classList.toggle("hidden", !user);
+    if (unsub) { unsub(); unsub = null; }
+    clearInterval(timer);
+    if (!user) return;
+    unsub = onValue(ref(db, "acquy"), s => { const d = s.val(); if (d) show(d); });
+    timer = setInterval(showAge, 5000);
+  });
+</script>
+</body>
+</html>
